@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #282c34;
+      font-family: Arial, sans-serif;
+      color: #ffffff;
+    }
+
+    .menu, .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .menu {
+      gap: 20px;
+    }
+
+    .menu button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .menu button:hover {
+      background-color: #0056b3;
+    }
+
+    .game {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+    }
+
+    .cell {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100px;
+      height: 100px;
+      background-color: #61dafb;
+      border: 2px solid #ffffff;
+      border-radius: 10px;
+      font-size: 2.5em;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .cell:hover {
+      transform: scale(1.1);
+      background-color: #21a1f1;
+    }
+
+    .cell.taken {
+      cursor: not-allowed;
+      background-color: #ddd;
+      color: #888;
+    }
+
+    .status {
+      margin-top: 20px;
+      font-size: 1.5em;
+      text-align: center;
+    }
+
+    .restart {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .restart:hover {
+      background-color: #0056b3;
+    }
+
+    .cell.winner {
+      animation: winnerAnimation 1s infinite alternate;
+    }
+
+    @keyframes winnerAnimation {
+      0% { background-color: #4caf50; transform: scale(1); }
+      100% { background-color: #81c784; transform: scale(1.1); }
+    }
+
+    .contact {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 10px 15px;
+      font-size: 0.9em;
+      cursor: pointer;
+      border: none;
+      background-color: #ff5722;
+      color: #fff;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .contact:hover {
+      background-color: #e64a19;
+    }
+
+    .additional-menu {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1em;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <button class="contact" onclick="contactMe()">Contact Me</button>
+
+  <div class="menu" id="menu">
+    <h1>Tic Tac Toe</h1>
+    <button onclick="startGame('human')">Play vs Player</button>
+    <button onclick="startGame('ai')">Play vs AI</button>
+    <div class="additional-menu">
+      <p><strong>Features:</strong></p>
+      <p>Choose your game mode, play against AI, or challenge a friend!</p>
+      <p>Track your wins and improve your skills!</p>
+    </div>
+  </div>
+
+  <div class="game-container" id="gameContainer" style="display: none;">
+    <div class="game" id="gameBoard"></div>
+    <div class="status" id="status"></div>
+    <button class="restart" id="restartButton">Restart Game</button>
+    <button class="restart" id="mainMenuButton">Main Menu</button>
+  </div>
+
+  <script>
+    const menu = document.getElementById('menu');
+    const gameContainer = document.getElementById('gameContainer');
+    const gameBoard = document.getElementById('gameBoard');
+    const statusDisplay = document.getElementById('status');
+    const restartButton = document.getElementById('restartButton');
+    const mainMenuButton = document.getElementById('mainMenuButton');
+
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let currentPlayer = 'X';
+    let isGameActive = true;
+    let gameMode = 'human';
+
+    const winningConditions = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    function startGame(mode) {
+      gameMode = mode;
+      menu.style.display = 'none';
+      gameContainer.style.display = 'flex';
+      initializeGame();
+    }
+
+    function handleResultValidation() {
+      for (let condition of winningConditions) {
+        const [a, b, c] = condition;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          statusDisplay.textContent = `Player ${currentPlayer} Wins!`;
+          isGameActive = false;
+          highlightWinningCells(condition);
+          return;
+        }
+      }
+
+      if (!board.includes('')) {
+        statusDisplay.textContent = 'Draw!';
+        isGameActive = false;
+      }
+    }
+
+    function highlightWinningCells(winningCells) {
+      winningCells.forEach(index => {
+        gameBoard.children[index].classList.add('winner');
+      });
+    }
+
+    function handleCellClick(event) {
+      const cell = event.target;
+      const cellIndex = Array.from(gameBoard.children).indexOf(cell);
+
+      if (board[cellIndex] || !isGameActive) {
+        return;
+      }
+
+      board[cellIndex] = currentPlayer;
+      cell.textContent = currentPlayer;
+      cell.classList.add('taken');
+
+      handleResultValidation();
+
+      if (isGameActive) {
+        if (gameMode === 'human') {
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+          statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+        } else {
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+          setTimeout(aiMove, 500);
+        }
+      }
+    }
+
+    function aiMove() {
+      let emptyCells = board.map((value, index) => value === '' ? index : null).filter(index => index !== null);
+      if (emptyCells.length === 0 || !isGameActive) return;
+
+      let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      board[randomIndex] = currentPlayer;
+      gameBoard.children[randomIndex].textContent = currentPlayer;
+      gameBoard.children[randomIndex].classList.add('taken');
+
+      handleResultValidation();
+
+      if (isGameActive) {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+      }
+    }
+
+    function restartGame() {
+      board = ['', '', '', '', '', '', '', '', ''];
+      currentPlayer = 'X';
+      isGameActive = true;
+      statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+      Array.from(gameBoard.children).forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('taken', 'winner');
+      });
+    }
+
+    function returnToMainMenu() {
+      gameContainer.style.display = 'none';
+      menu.style.display = 'flex';
+    }
+
+    function contactMe() {
+      alert('You can contact me at: gothamnx@gmail.com');
+    }
+
+    function initializeGame() {
+      gameBoard.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.addEventListener('click', handleCellClick);
+        gameBoard.appendChild(cell);
+      }
+      statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+    }
+
+    restartButton.addEventListener('click', restartGame);
+    mainMenuButton.addEventListener('click', returnToMainMenu);
+  </script>
+</body>
+</html>
